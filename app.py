@@ -1,6 +1,6 @@
 import os
-from flask import ( Flask, flash, render_template,
-                    redirect, request, session, url_for)
+from flask import ( Flask, flash, render_template, redirect,
+                    request, session, url_for, abort)
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -144,6 +144,16 @@ def delete_task(task_id):
     mongo.db.tasks.remove({"_id": ObjectId(task_id)})
     flash("Task Successfully Deleted")
     return redirect(url_for("get_tasks"))
+
+
+@app.route("/get_categories")
+def get_categories():
+    if session["user"].lower() == "admin":
+        categories = list(mongo.db.categories.find().sort("category_name", 1))
+        return render_template("categories.html", categories=categories)
+    else:
+        #Forbidden for anyone but admin user
+        abort(403)
 
 
 if __name__ == "__main__":
