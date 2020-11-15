@@ -1,12 +1,13 @@
 import os
-from flask import (
-                    Flask, flash, render_template,
+from flask import ( Flask, flash, render_template,
                     redirect, request, session, url_for)
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 if os.path.exists("env.py"):
     import env
+
+DEBUGGING = True
 
 app = Flask(__name__)
 
@@ -83,7 +84,7 @@ def profile(username):
     if session["user"]:
         return render_template("profile.html", username=username)
 
-    # grab the session user's username from db
+    # grab the session user's username from database
     username = mongo.db.users.find_one(
         {"username": session["user"]})["username"]
 
@@ -98,8 +99,22 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route("/add_task")
+@app.route("/add_task", methods=["GET", "POST"])
 def add_task():
+    if request.method == "POST":
+        is_urgent = "on" if request.form.get("is_urgent") else "off"
+        task = {
+            "category_name": request.form.get("category_name"),
+            "task_name": request.form.get("task_name"),
+            "task_description": request.form.get("task_description"),
+            "is_urgent": is_urgent,
+            "due_date": request.form.get("due_date"),
+            "created_by": session["user"]
+        }
+        mongo.db.tasks.insert_one(task)
+        flash("Task Successfully Added")
+        return redirect(url_for("get_tasks"))
+
     categories = mongo.db.categories.find().sort("category_name", 1)
     return render_template("add_task.html", categories=categories)
 
@@ -107,4 +122,4 @@ def add_task():
 if __name__ == "__main__":
     app.run(host=os.environ.get("IP"),
             port=int(os.environ.get("PORT")),
-            debug=True)
+            debug=DEBUGGING)
