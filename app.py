@@ -157,55 +157,48 @@ def get_categories():
 
 @app.route("/add_category", methods=["GET", "POST"])
 def add_category():
-    if request.method == "POST":
-        category = {
-            "category_name": request.form.get("category_name")
-        }
-        mongo.db.categories.insert_one(category)
-        flash("New Category Added")
-        return redirect(url_for("get_categories"))
+    if session["user"].lower() == "admin":
+        if request.method == "POST":
+            category = {
+                "category_name": request.form.get("category_name")
+            }
+            mongo.db.categories.insert_one(category)
+            flash("New Category Added")
+            return redirect(url_for("get_categories"))
 
-    return render_template("add_category.html")
+        return render_template("add_category.html")
+    else:
+        abort(403)
 
 
 @app.route("/edit_category/<category_id>", methods=["GET", "POST"])
 def edit_category(category_id):
-    if request.method == "POST":
-        submit = {
-            "category_name": request.form.get("category_name")
-        }
-        mongo.db.categories.update({"_id": ObjectId(category_id)}, submit)
-        flash("Category Successfully Updated")
-        return redirect(url_for("get_categories"))
+    if session["user"].lower() == "admin":
+        if request.method == "POST":
+            submit = {
+                "category_name": request.form.get("category_name")
+            }
+            mongo.db.categories.update({"_id": ObjectId(category_id)}, submit)
+            flash("Category Successfully Updated")
+            return redirect(url_for("get_categories"))
 
-    category = mongo.db.categories.find_one({"_id": ObjectId(category_id)})
-    return render_template("edit_category.html", category=category)
+        category = mongo.db.categories.find_one({"_id": ObjectId(category_id)})
+        return render_template("edit_category.html", category=category)
+    else:
+        abort(403)
 
 
 @app.route("/delete_category/<category_id>")
 def delete_category(category_id):
-    mongo.db.categories.remove({"_id": ObjectId(category_id)})
-    flash("Category Successfully Delete")
-    return redirect(url_for("get_categories"))
+    if session["user"].lower() == "admin":
+        mongo.db.categories.remove({"_id": ObjectId(category_id)})
+        flash("Category Successfully Delete")
+        return redirect(url_for("get_categories"))
+    else:
+        abort(403)
 
 
 if __name__ == "__main__":
     app.run(host=os.environ.get("IP"),
             port=int(os.environ.get("PORT")),
             debug=DEBUGGING)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#give me some fucking space
